@@ -1,0 +1,2033 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>MovementHub Census Map</title>
+
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.2.0/mapbox-gl.js"></script>
+
+    <link
+      href="https://api.tiles.mapbox.com/mapbox-gl-js/v1.2.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+
+    <script src="./citysdk.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.0.4/chroma.min.js"></script>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+      }
+
+      h3 {
+        font-family: Courier, monospace;
+        font-style: normal;
+        font-size: x-small;
+        margin: 3px;
+      }
+
+      .legend {
+        background: white;
+        opacity: 70%;
+        padding: 5px;
+        position: absolute;
+        bottom: 35px;
+        left: 15px;
+        z-index: 2000;
+        box-shadow: 0 15px 15px rgba(0, 0, 0, 0.08);
+      }
+
+      #menu,
+      #menu-zoomin {
+        background: rgba(0, 0, 0, 0.7);
+        position: absolute;
+        z-index: 1;
+        top: 10px;
+        left: 10px;
+        border-radius: 3px;
+        width: 290px;
+        font-family: "Open Sans", sans-serif;
+        display: none;
+        color: White;
+        font-size: 13px;
+      }
+
+      div.menu-item {
+        display: block;
+        margin: 0;
+        padding: 10px;
+        padding-left: 45px;
+        text-decoration: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+        text-align: left;
+        background-image: url("https://cdn.glitch.com/a15ed610-6b69-40dc-97fd-18ee50873db4%2Ftoggle-off-regular.svg?v=1596816428940");
+        background-repeat: no-repeat;
+        background-position: 10px 7px;
+        background-size: 25px;
+        cursor: pointer;
+        border-bottom: 1px dotted White;
+      }
+
+      div.menu-item.active {
+        background-image: url("https://cdn.glitch.com/a15ed610-6b69-40dc-97fd-18ee50873db4%2Ftoggle-on-solid.svg?v=1596816432296") !important;
+      }
+
+      div.menu-item ul {
+        margin-left: -25px;
+        margin-top: 25px;
+        padding: 0;
+        list-style-type: none;
+      }
+
+      div.menu-item ul li {
+        background-image: url("https://cdn.glitch.com/21e66561-54e4-4f63-a7ed-b436babd64bb%2Fdot-circle-solid.svg?v=1597077366560");
+        background-position: 0px 2px;
+        background-repeat: no-repeat;
+        background-size: 10px;
+        padding-left: 20px;
+      }
+
+      div.menu-item ul li.active {
+        background-image: url("https://cdn.glitch.com/21e66561-54e4-4f63-a7ed-b436babd64bb%2Fcircle-solid.svg?v=1597077616011") !important;
+      }
+
+      .subwindow {
+        padding: 10px;
+        display: none;
+      }
+
+      .subwindow ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .subwindow ul li {
+        margin-bottom: 5px;
+        border-bottom: 1px dotted White;
+      }
+
+      div#legend {
+        position: absolute;
+        z-index: 1;
+        width: 150px;
+        height: auto;
+        bottom: 30px;
+        right: 10px;
+        background-color: rgba(0, 0, 0, 0.8);
+        padding: 15px;
+        color: White;
+        font-size: 14px;
+        font-family: "Open Sans", sans-serif;
+      }
+
+      div#legendTitle {
+        text-transform: uppercase;
+        margin-bottom: 15px;
+      }
+
+      div#legendWrapper {
+        display: grid;
+        grid-template-columns: 30px auto;
+        grid-row-gap: 5px;
+      }
+
+      div#legend #legendWrapper div.color {
+        width: 20px;
+        height: 20px;
+        display: inline-block;
+        background-color: White;
+      }
+
+      div#legend #legendWrapper div.label {
+        display: inline-block;
+      }
+
+      div.instructions {
+        position: absolute;
+        text-align: right;
+        background-color: rgb(255 255 255 / 100%);
+        color: black;
+        z-index: 1;
+        font-family: "Open Sans", sans-serif;
+        font-size: 16px;
+        letter-spacing: -0.5px;
+        padding: 7px 8px 7px 10px;
+        border: 1px solid Gray;
+        display: none;
+      }
+      div#howsearch {
+        top: 10px;
+        right: 260px;
+      }
+
+      div#howto {
+        top: 57px;
+        right: 50px;
+      }
+
+      div.instructions img {
+        width: 20px;
+        display: inline-block;
+        /*transform: rotate(-5deg);*/
+        margin-left: 10px;
+        vertical-align: middle;
+      }
+
+      div.mapboxgl-popup-content ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+      }
+      div.mapboxgl-popup-content ul li {
+        border-bottom: 1px solid Lightgray;
+      }
+      div.mapboxgl-popup-close-button {
+        top: 2px !important;
+      }
+      div.mapboxgl-popup-content {
+        padding: 10px 15px 10px 10px !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.5.1/mapbox-gl-geocoder.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.5.1/mapbox-gl-geocoder.css"
+      type="text/css"
+    />
+    <!-- Promise polyfill script required to use Mapbox GL Geocoder in IE 11 -->
+    <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.min.js"></script>
+
+    <nav id="menu">
+      <div class="menu-item">
+        % AA + NHPI population
+      </div>
+    </nav>
+    <nav id="menu-zoomin">
+      <div class="menu-item" layer-id="counties_aa_pop">
+        Asian American
+      </div>
+      <div id="subwindow-aa" class="subwindow">
+        <p style="margin-top: 0; margin-bottom: 3px">
+          <span class="windowcount">#</span> total Asian Americans
+        </p>
+        <p style="margin-top: 0;">
+          in <span class="countyname">county, state</span>:
+        </p>
+        <ul id="aa-subgroups">
+          <li>Asian Indian: <span class="asianindian"></span>%</li>
+          <li>Bangladeshi: <span class="bangladeshi"></span>%</li>
+          <li>Bhutanese: <span class="bhutanese"></span>%</li>
+          <li>Burmese: <span class="burmese"></span>%</li>
+          <li>Cambodian: <span class="cambodian"></span>%</li>
+          <li>Chinese (except Taiwanese): <span class="chinese"></span>%</li>
+          <li>Filipino: <span class="filipino"></span>%</li>
+          <li>Hmong: <span class="hmong"></span>%</li>
+          <li>Indonesian: <span class="indonesian"></span>%</li>
+          <li>Japanese: <span class="japanese"></span>%</li>
+          <li>Korean: <span class="korean"></span>%</li>
+          <li>Laotian: <span class="laotian"></span>%</li>
+          <li>Malaysian: <span class="malaysian"></span>%</li>
+          <li>Mongolian: <span class="mongolian"></span>%</li>
+          <li>Nepalese: <span class="nepalese"></span>%</li>
+          <li>Okinawan: <span class="okinawan"></span>%</li>
+          <li>Pakistani: <span class="pakistani"></span>%</li>
+          <li>Sri Lankan: <span class="srilankan"></span>%</li>
+          <li>Taiwanese: <span class="taiwanese"></span>%</li>
+          <li>Thai: <span class="thai"></span>%</li>
+          <li>Vietnamese: <span class="vietnamese"></span>%</li>
+          <li>
+            Other Asian, Specified: <span class="other_specified"></span>%
+          </li>
+          <li>
+            Other Asian, Not Specified:
+            <span class="other_notspecified"></span>%
+          </li>
+        </ul>
+      </div>
+      <div class="menu-item" layer-id="counties_pi_pop">
+        Native Hawaiians and Pacific Islanders
+      </div>
+
+      <div id="subwindow-pi" class="subwindow">
+        <p style="margin-top: 0; margin-bottom: 3px;">
+          <span class="windowcount">#</span> total Pacific Islanders
+        </p>
+        <p style="margin-top: 0;">
+          in <span class="countyname">county, state</span>:
+        </p>
+        <ul id="pi-subgroups">
+          <li>Fijian: <span class="melanesian_fijian"></span>%</li>
+          <li>
+            Guamanian or Chamorro:
+            <span class="micronesian_guamanian_chamorro"></span>%
+          </li>
+          <li>Marshallese: <span class="micronesian_marshallese"></span>%</li>
+          <li>Native Hawaiian: <span class="polynesian"></span>%</li>
+          <li>Samoan: <span class="polynesian_samoan"></span>%</li>
+          <li>Tongan: <span class="polynesian_tongan"></span>%</li>
+          <li>Other Melanesian: <span class="melanesian_other"></span>%</li>
+          <li>Other Micronesian: <span class="micronesian_other"></span>%</li>
+          <li>Other PI, Not Specified: <span class="other"></span>%</li>
+          <li>Other Polynesian: <span class="polynesian_other"></span>%</li>
+        </ul>
+      </div>
+    </nav>
+
+    <div id="legend">
+      <div id="legendTitle">
+        legend
+        <p style="text-transform: lowercase; margin-top: 2px; font-size: 12px;">
+          % of total population
+        </p>
+      </div>
+      <div id="legendWrapper">
+        <!-- note: use https://vis4.net/labs/multihue -->
+        <div class="color" style="background-color: #fff387;"></div>
+        <div class="label">0 - 4.5%</div>
+        <div class="color" style="background-color: #f29d3b;"></div>
+        <div class="label">4.5% - 9%</div>
+        <div class="color" style="background-color: #e47923;"></div>
+        <div class="label">9 - 13.5%</div>
+        <div class="color" style="background-color: #d45304;"></div>
+        <div class="label">&gt; 13.5%</div>
+      </div>
+    </div>
+
+    <div id="howsearch" class="instructions">
+      Search for a city or address here
+      <img
+        src="https://cdn.glitch.com/33c850c4-7fd8-419f-b5aa-e1f6a65a95aa%2Farrow-circle-right-black.svg?v=1600273982693"
+      />
+    </div>
+    <div id="howto" class="instructions">
+      Or zoom in to see more census data at the county level
+      <img
+        src="https://cdn.glitch.com/33c850c4-7fd8-419f-b5aa-e1f6a65a95aa%2Farrow-circle-right-black.svg?v=1600273982693"
+      />
+    </div>
+
+    <div id="map"></div>
+
+    <script>
+      mapboxgl.accessToken =
+        "pk.eyJ1IjoiYWFwaW1vdmVtZW50aHViIiwiYSI6ImNrZDh5dGl0MzAxZzYzMGxlc2swbXloNnMifQ.U0mY3a6LFLWzLVUcRP3kBg";
+      var map = new mapboxgl.Map({
+        container: "map",
+        style: "mapbox://styles/aapimovementhub/cke1rlumi080r1apowyuk7ocf",
+        center: { lat: 37.0902, lng: -110.7129 },
+        zoom: 3
+      });
+
+      var zoomThreshold = 4;
+
+      map.addControl(
+        new MapboxGeocoder({
+          accessToken: mapboxgl.accessToken,
+          marker: false,
+          flyTo: {
+            zoom: 8.5
+          },
+          mapboxgl: mapboxgl,
+          countries: "us"
+        })
+      );
+
+      var nav = new mapboxgl.NavigationControl();
+      map.addControl(nav, "top-right");
+
+      // create empty arrays that will be filled by census data,
+      // global scope so we can use them later
+
+      let full_aa = [];
+      let full_pi = [];
+
+      let currentcounty = "";
+
+      /////// DATA FOR POP-UP WINDOW ////////
+
+      //////// Group 1: Asian-American (AA) /////////
+
+      // Total Count, Asian American: DP05_0067E //
+
+      census(
+        {
+          sourcePath: ["acs", "acs5", "profile"],
+          vintage: 2018,
+          values: ["NAME", "DP05_0067E"],
+          statskey: "278700434728d37ec967316f1508d7cb15973d58",
+          geoHierarchy: {
+            county: "*"
+          }
+        },
+        function(error, response) {
+          for (i = 0; i < response.length; i++) {
+            full_aa[i] = response[i];
+            full_aa[i].total_aa_count = response[i].DP05_0067E;
+          }
+
+          // note: DP05_0067E = Total AA Population  //
+
+          callAA();
+          // only call the rest of the AA functions after this first one
+          // where we need to define our array
+        }
+      );
+
+      function callAA() {
+        // AA, % Under Federal Poverty Line: B17020D_002E / B17020D_001E //
+
+        census(
+          {
+            sourcePath: ["acs", "acs5"],
+            vintage: 2018,
+            values: ["NAME", "B17020D_002E", "B17020D_001E"],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+
+          function(error, response) {
+            // loop through every county and calculate new % for each
+            // and write new property percent_pov_aa into the full array
+
+            for (i = 0; i < response.length; i++) {
+              const total_pov_aa = response[i].B17020D_002E;
+              const total_pop_aa = response[i].B17020D_001E;
+
+              let percent_pov_aa = (total_pov_aa / total_pop_aa) * 100;
+
+              if (Number.isNaN(percent_pov_aa)) {
+                percent_pov_aa = 0;
+              }
+
+              full_aa[i].percent_pov_aa = percent_pov_aa;
+            }
+          }
+        );
+
+        // AA, % Limited English Proficiency//
+
+        /*Variables:  
+        
+           B16005D_006E: Native, speaks english less than very well 
+           B16005D_011E: Foreign-born, speaks english less than very well 
+           B16005D_001E: Total AA for this variable
+        
+           Formula to use: (B16005D_006E + B16005D_011E) / B16005D_001E */
+
+        census(
+          {
+            sourcePath: ["acs", "acs5"],
+            vintage: 2018,
+            values: ["NAME", "B16005D_006E", "B16005D_011E", "B16005D_001E"],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+
+          function(error, response) {
+            // loop through every county and calculate new % for each
+            // and write new property percent_ling_eng into the full array
+
+            for (i = 0; i < response.length; i++) {
+              const native_lim_eng = response[i].B16005D_006E;
+              const foreign_lim_eng = response[i].B16005D_011E;
+              const total_eng_aa = response[i].B16005D_001E;
+
+              const total_lim_eng = native_lim_eng + foreign_lim_eng;
+              let percent_lim_eng = (total_lim_eng / total_eng_aa) * 100;
+              if (Number.isNaN(percent_lim_eng)) {
+                percent_lim_eng = 0;
+              }
+
+              full_aa[i].percent_lim_eng = percent_lim_eng;
+            }
+          }
+        );
+
+        // AA, Median Age //
+
+        census(
+          {
+            sourcePath: ["acs", "acs5"],
+            vintage: 2018,
+            values: ["NAME", "B01002D_001E"],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+
+          function(error, response) {
+            for (i = 0; i < response.length; i++) {
+              //note: B01002D_001E = AA Median Age //
+              let fixage = response[i].B01002D_001E;
+              if (fixage < 0) {
+                fixage = "No Data";
+              }
+
+              full_aa[i].fixed_age = fixage;
+            }
+          }
+        );
+
+        // AA, % Uninsured //
+
+        /*Variables:  
+        
+           C27001D_004E: AA, under 19, no coverage
+           C27001D_007E: AA, 19-64, no coverage
+           C27001D_010E: AA, over 65, no coverage
+           C27001D_001E: AA, Total Pop for this variable
+        
+        Formula to use: (C27001D_004E + C27001D_007E + C27001D_010E) /  C27001D_001E
+        
+        
+           */
+
+        census(
+          {
+            sourcePath: ["acs", "acs5"],
+            vintage: 2018,
+            values: [
+              "NAME",
+              "C27001D_004E",
+              "C27001D_007E",
+              "C27001D_010E",
+              "C27001D_001E"
+            ],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+
+          function(error, response) {
+            // loop through every county and calculate new total % for each
+            // and write new property percent_aa_uninsured into the full array
+
+            for (i = 0; i < response.length; i++) {
+              const aa_uninsured_child = response[i].C27001D_004E;
+              const aa_uninsured_adult = response[i].C27001D_007E;
+              const aa_uninsured_senior = response[i].C27001D_010E;
+              const aa_uninsured_pop = response[i].C27001D_001E;
+
+              const total_aa_uninsured =
+                aa_uninsured_child + aa_uninsured_adult + aa_uninsured_senior;
+              let percent_aa_uninsured =
+                (total_aa_uninsured / aa_uninsured_pop) * 100;
+
+              if (Number.isNaN(percent_aa_uninsured)) {
+                percent_aa_uninsured = 0;
+              }
+              full_aa[i].percent_aa_uninsured = percent_aa_uninsured;
+            }
+          }
+        );
+
+        // AA, % Renters by County //
+
+        /*variables:
+         B25003D_003E: Total # of AA Renters
+         B25003D_001E: Total AA for this variable
+         
+         Formula: B25003D_003E / B25003D_001E */
+
+        census(
+          {
+            sourcePath: ["acs", "acs5"],
+            vintage: 2018,
+            values: ["NAME", "B25003D_003E", "B25003D_001E"],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+
+          function(error, response) {
+            // loop through every county and calculate new total % for each
+            // and write new property percent_aa_renters into the full array
+
+            for (i = 0; i < response.length; i++) {
+              const aa_renters = response[i].B25003D_003E;
+              const aa_tenure = response[i].B25003D_001E;
+
+              let percent_aa_renters = (aa_renters / aa_tenure) * 100;
+
+              if (Number.isNaN(percent_aa_renters)) {
+                percent_aa_renters = 0;
+              }
+
+              full_aa[i].percent_aa_renters = percent_aa_renters;
+            }
+          }
+        );
+
+        // AA, Voting-Age Citizen //
+
+        /*Variables:  
+        
+           B05003D_009E: Native, Asian, Male adult
+           B05003D_011E: Naturalized, Asian, Male adult
+           B05003D_020E: Native, Asian, Female adult
+           B05003D_022E: Naturalized, Asian, Female adult 
+           B05003D_008E Total, AA, Male adult
+           B05003D_019E: Total, AA, Female adult
+        
+        Formula to use: (B05003D_009E + B05003D_011E + B05003D_020E + B05003D_022E) / (B05003D_008E + B05003D_019E)
+        
+           */
+
+        census(
+          {
+            sourcePath: ["acs", "acs5"],
+            vintage: 2018,
+            values: [
+              "NAME",
+              "B05003D_009E",
+              "B05003D_011E",
+              "B05003D_020E",
+              "B05003D_022E",
+              "B05003D_008E",
+              "B05003D_019E"
+            ],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+
+          function(error, response) {
+            // loop through every county and calculate new total % for each
+            // and write new property percent_aa_citizen into the full array
+
+            for (i = 0; i < response.length; i++) {
+              const native_m = response[i].B05003D_009E;
+              const naturalized_m = response[i].B05003D_011E;
+              const native_f = response[i].B05003D_020E;
+              const naturalized_f = response[i].B05003D_022E;
+              const total_m = response[i].B05003D_008E;
+              const total_f = response[i].B05003D_019E;
+
+              const totalcitizen =
+                native_m + naturalized_m + native_f + naturalized_f;
+              const totalaapop = total_m + total_f;
+              let percent_aa_citizen = (totalcitizen / totalaapop) * 100;
+
+              if (Number.isNaN(percent_aa_citizen)) {
+                percent_aa_citizen = 0;
+              }
+              full_aa[i].percent_aa_citizen = percent_aa_citizen;
+            }
+          }
+        );
+
+        // Asian-American (AA) Sub-Ethnic Groups //
+
+        /*
+  
+        List of variables: 
+        B02018_001E	Estimate!!Total Groups Tallied	
+        B02018_002E	Estimate!!Total Groups Tallied!!Asian Indian	
+        B02018_003E	Estimate!!Total Groups Tallied!!Bangladeshi	
+        B02018_004E	Estimate!!Total Groups Tallied!!Bhutanese	
+        B02018_005E	Estimate!!Total Groups Tallied!!Burmese	
+        B02018_006E	Estimate!!Total Groups Tallied!!Cambodian	
+        B02018_007E	Estimate!!Total Groups Tallied!!Chinese, except Taiwanese	
+        B02018_008E	Estimate!!Total Groups Tallied!!Filipino	
+        B02018_009E	Estimate!!Total Groups Tallied!!Hmong	
+        B02018_010E	Estimate!!Total Groups Tallied!!Indonesian	
+        B02018_011E	Estimate!!Total Groups Tallied!!Japanese	
+        B02018_012E	Estimate!!Total Groups Tallied!!Korean	
+        B02018_013E	Estimate!!Total Groups Tallied!!Laotian	
+        B02018_014E	Estimate!!Total Groups Tallied!!Malaysian	
+        B02018_015E	Estimate!!Total Groups Tallied!!Mongolian	
+        B02018_016E	Estimate!!Total Groups Tallied!!Nepalese	
+        B02018_017E	Estimate!!Total Groups Tallied!!Okinawan	
+        B02018_018E	Estimate!!Total Groups Tallied!!Pakistani	
+        B02018_019E	Estimate!!Total Groups Tallied!!Sri Lankan	
+        B02018_020E	Estimate!!Total Groups Tallied!!Taiwanese	
+        B02018_021E	Estimate!!Total Groups Tallied!!Thai	
+        B02018_022E	Estimate!!Total Groups Tallied!!Vietnamese	
+        B02018_023E	Estimate!!Total Groups Tallied!!Other Asian, specified	
+        B02018_024E	Estimate!!Total Groups Tallied!!Other Asian, not specified
+        */
+
+        census(
+          {
+            sourcePath: ["acs", "acs5"],
+            vintage: 2018,
+            values: [
+              "NAME",
+              "B02018_001E",
+              "B02018_002E",
+              "B02018_003E",
+              "B02018_004E",
+              "B02018_005E",
+              "B02018_006E",
+              "B02018_007E",
+              "B02018_008E",
+              "B02018_009E",
+              "B02018_010E",
+              "B02018_011E",
+              "B02018_012E",
+              "B02018_013E",
+              "B02018_014E",
+              "B02018_015E",
+              "B02018_016E",
+              "B02018_017E",
+              "B02018_018E",
+              "B02018_019E",
+              "B02018_020E",
+              "B02018_021E",
+              "B02018_022E",
+              "B02018_023E",
+              "B02018_024E"
+            ],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+          function(error, response) {
+            for (i = 0; i < response.length; i++) {
+              //note: B02018_001E = Total Asian //
+
+              let total_aa = response[i].B02018_001E;
+              const total_asianindian = response[i].B02018_002E;
+              const total_bangladeshi = response[i].B02018_003E;
+              const total_bhutanese = response[i].B02018_004E;
+              const total_burmese = response[i].B02018_005E;
+              const total_cambodian = response[i].B02018_006E;
+              const total_chinese = response[i].B02018_007E;
+              const total_filipino = response[i].B02018_008E;
+              const total_hmong = response[i].B02018_009E;
+              const total_indo = response[i].B02018_010E;
+              const total_japanese = response[i].B02018_011E;
+              const total_korean = response[i].B02018_012E;
+              const total_laotian = response[i].B02018_013E;
+              const total_malay = response[i].B02018_014E;
+              const total_mongolian = response[i].B02018_015E;
+              const total_nepalese = response[i].B02018_016E;
+              const total_okinawan = response[i].B02018_017E;
+              const total_pakistani = response[i].B02018_018E;
+              const total_srilank = response[i].B02018_019E;
+              const total_taiwanese = response[i].B02018_020E;
+              const total_thai = response[i].B02018_021E;
+              const total_vietnamese = response[i].B02018_022E;
+              const total_other_spe = response[i].B02018_023E;
+              const total_other_unspe = response[i].B02018_024E;
+
+              if (total_aa === 0) {
+                total_aa = 1;
+              } // avoid NaN, no divide by 0
+
+              const percent_asianindian = (total_asianindian / total_aa) * 100;
+              const percent_bangladeshi = (total_bangladeshi / total_aa) * 100;
+              const percent_bhutanese = (total_bhutanese / total_aa) * 100;
+              const percent_burmese = (total_burmese / total_aa) * 100;
+              const percent_cambodian = (total_cambodian / total_aa) * 100;
+              const percent_chinese = (total_chinese / total_aa) * 100;
+              const percent_filipino = (total_filipino / total_aa) * 100;
+              const percent_hmong = (total_hmong / total_aa) * 100;
+              const percent_indo = (total_indo / total_aa) * 100;
+              const percent_japanese = (total_japanese / total_aa) * 100;
+              const percent_korean = (total_korean / total_aa) * 100;
+              const percent_laotian = (total_laotian / total_aa) * 100;
+              const percent_malay = (total_malay / total_aa) * 100;
+              const percent_mongolian = (total_mongolian / total_aa) * 100;
+              const percent_nepalese = (total_nepalese / total_aa) * 100;
+              const percent_okinawan = (total_okinawan / total_aa) * 100;
+              const percent_pakistani = (total_pakistani / total_aa) * 100;
+              const percent_srilank = (total_srilank / total_aa) * 100;
+              const percent_taiwanese = (total_taiwanese / total_aa) * 100;
+              const percent_thai = (total_thai / total_aa) * 100;
+              const percent_vietnamese = (total_vietnamese / total_aa) * 100;
+              const percent_other_spe = (total_other_spe / total_aa) * 100;
+              const percent_other_unspe = (total_other_unspe / total_aa) * 100;
+
+              full_aa[i].asianindian = percent_asianindian;
+              full_aa[i].bangladeshi = percent_bangladeshi;
+              full_aa[i].bhutanese = percent_bhutanese;
+              full_aa[i].burmese = percent_burmese;
+              full_aa[i].cambodian = percent_cambodian;
+              full_aa[i].chinese = percent_chinese;
+              full_aa[i].filipino = percent_filipino;
+              full_aa[i].hmong = percent_hmong;
+              full_aa[i].indonesian = percent_indo;
+              full_aa[i].japanese = percent_japanese;
+              full_aa[i].korean = percent_korean;
+              full_aa[i].laotian = percent_laotian;
+              full_aa[i].malaysian = percent_malay;
+              full_aa[i].mongolian = percent_mongolian;
+              full_aa[i].nepalese = percent_nepalese;
+              full_aa[i].okinawan = percent_okinawan;
+              full_aa[i].pakistani = percent_pakistani;
+              full_aa[i].srilankan = percent_srilank;
+              full_aa[i].taiwanese = percent_taiwanese;
+              full_aa[i].thai = percent_thai;
+              full_aa[i].vietnamese = percent_vietnamese;
+              full_aa[i].other_specified = percent_other_spe;
+              full_aa[i].other_notspecified = percent_other_unspe;
+            }
+
+            console.log("full aa array:");
+            console.log(full_aa);
+          }
+        );
+      } // end synchronous function, callAA
+
+      ///////// Group 2: Native Hawaiian Pacific Islander (NHPI) /////////
+
+      // Total Count, NHPI: DP05_0068E //
+
+      census(
+        {
+          sourcePath: ["acs", "acs5", "profile"],
+          vintage: 2018,
+          values: ["NAME", "DP05_0068E"],
+          statskey: "278700434728d37ec967316f1508d7cb15973d58",
+          geoHierarchy: {
+            county: "*"
+          }
+        },
+        function(error, response) {
+          full_pi = Array.from(response);
+
+          for (i = 0; i < response.length; i++) {
+            full_pi[i].total_pi_count = response[i].DP05_0068E;
+          }
+          // note: DP05_0068E = Total NHPI Population //
+
+          callPI();
+          // only call the rest of PI variables after this one
+          // where we need to define our array
+        }
+      );
+
+      function callPI() {
+        //NHPI, % Under Federal Poverty Line: B17020E_002E / B17020E_001E //
+
+        census(
+          {
+            sourcePath: ["acs", "acs5"],
+            vintage: 2018,
+            values: ["NAME", "B17020E_002E", "B17020E_001E"],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+
+          function(error, response) {
+            // loop through every county and calculate new total % for each
+            // and write new property percent_pov_nhpi into the full array
+
+            for (i = 0; i < response.length; i++) {
+              const total_pov_nhpi = response[i].B17020E_002E;
+              const total_pop_nhpi = response[i].B17020E_001E;
+
+              let percent_pov_nhpi = (total_pov_nhpi / total_pop_nhpi) * 100;
+
+              if (Number.isNaN(percent_pov_nhpi)) {
+                percent_pov_nhpi = 0;
+              }
+
+              full_pi[i].percent_pov_nhpi = percent_pov_nhpi;
+            }
+          }
+        );
+
+        //NHPI, % Limited English Proficiency//
+
+        /*Variables:  
+        
+           B16005E_006E: Native, speaks english less than very well 
+           B16005E_011E: Foreign-born, speaks english less than very well 
+           B16005E_001E: Total NHPI for this variable
+        
+           Formula to use: (B16005E_006E + B16005E_011E) / B16005E_001E */
+
+        census(
+          {
+            sourcePath: ["acs", "acs5"],
+            vintage: 2018,
+            values: ["NAME", "B16005E_006E", "B16005E_011E", "B16005E_001E"],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+
+          function(error, response) {
+            // loop through every county and calculate new total % for each
+            // and write new property percent_lim_eng_nhpi into the full array
+
+            for (i = 0; i < response.length; i++) {
+              const native_lim_eng_nhpi = response[i].B16005E_006E;
+              const foreign_lim_eng_nhpi = response[i].B16005E_011E;
+              const total_eng_nhpi = response[i].B16005E_001E;
+
+              const total_lim_eng_nhpi =
+                native_lim_eng_nhpi + foreign_lim_eng_nhpi;
+              let percent_lim_eng_nhpi =
+                (total_lim_eng_nhpi / total_eng_nhpi) * 100;
+
+              if (Number.isNaN(percent_lim_eng_nhpi)) {
+                percent_lim_eng_nhpi = 0;
+              }
+
+              full_pi[i].percent_lim_eng_nhpi = percent_lim_eng_nhpi;
+            }
+          }
+        );
+
+        // NHPI, Median Age //
+
+        census(
+          {
+            sourcePath: ["acs", "acs5"],
+            vintage: 2018,
+            values: ["NAME", "B01002E_001E"],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+
+          function(error, response) {
+            for (i = 0; i < response.length; i++) {
+              //note: B01002D_001E = AA Median Age //
+
+              let fixage = response[i].B01002E_001E;
+              if (fixage < 0) {
+                fixage = "No Data";
+              }
+              full_pi[i].fixed_age = fixage;
+            }
+          }
+        );
+
+        // NHPI, % Uninsured //
+
+        /*Variables:  
+        
+           C27001E_004E: NHPI, under 19, no coverage
+           C27001E_007E: NHPI, 19-64, no coverage
+           C27001E_010E: NHPI, over 65, no coverage
+           C27001E_001E: NHPI, Total Pop for this variable
+        
+        Formula to use: (C27001E_004E + C27001E_007E + C27001E_010E) /  C27001E_001E
+        
+        
+           */
+
+        census(
+          {
+            sourcePath: ["acs", "acs5"],
+            vintage: 2018,
+            values: [
+              "NAME",
+              "C27001E_004E",
+              "C27001E_007E",
+              "C27001E_010E",
+              "C27001E_001E"
+            ],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+
+          function(error, response) {
+            // loop through every county and calculate new total % for each
+            // and write new property percent_nhpi_uninsured into the full array
+
+            for (i = 0; i < response.length; i++) {
+              const nhpi_uninsured_child = response[i].C27001E_004E;
+              const nhpi_uninsured_adult = response[i].C27001E_007E;
+              const nhpi_uninsured_senior = response[i].C27001E_010E;
+              const nhpi_uninsured_pop = response[i].C27001E_001E;
+
+              const total_nhpi_uninsured =
+                nhpi_uninsured_child +
+                nhpi_uninsured_adult +
+                nhpi_uninsured_senior;
+              let percent_nhpi_uninsured =
+                (total_nhpi_uninsured / nhpi_uninsured_pop) * 100;
+
+              if (Number.isNaN(percent_nhpi_uninsured)) {
+                percent_nhpi_uninsured = 0;
+              }
+              full_pi[i].percent_nhpi_uninsured = percent_nhpi_uninsured;
+            }
+          }
+        );
+
+        // NHPI, % Renters by County //
+
+        /*variables:
+         B25003E_003E: Total # of NHPI Renters
+         B25003E_001E: Total NHPI for this variable
+         
+         Formula: B25003E_003E / B25003E_001E */
+
+        census(
+          {
+            sourcePath: ["acs", "acs5"],
+            vintage: 2018,
+            values: ["NAME", "B25003E_003E", "B25003E_001E"],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+
+          function(error, response) {
+            // loop through every county and calculate new % count for each
+            // and write new property percent_nhpi_renters into the full array
+
+            for (i = 0; i < response.length; i++) {
+              const nhpi_renters = response[i].B25003E_003E;
+              const nhpi_tenure = response[i].B25003E_001E;
+
+              let percent_nhpi_renters = (nhpi_renters / nhpi_tenure) * 100;
+
+              if (Number.isNaN(percent_nhpi_renters)) {
+                percent_nhpi_renters = 0;
+              }
+              full_pi[i].percent_nhpi_renters = percent_nhpi_renters;
+            }
+          }
+        );
+
+        // NHPI, Voting-Age Citizen //
+
+        /*Variables:  
+        
+           B05003E_009E: Native, NHPI, Male adult
+           B05003E_011E: Naturalized, NHPI, Male adult
+           B05003E_020E: Native, NHPI, Female adult
+           B05003E_022E: Naturalized, NHPI, Female adult 
+           B05003E_008E Total, NHPI, Male adult
+           B05003E_019E: Total, NHPI, Female adult
+        
+        Formula to use: (B05003E_009E + B05003E_011E + B05003E_020E + B05003E_022E) / (B05003E_008E + B05003E_019E)
+        
+           */
+
+        census(
+          {
+            sourcePath: ["acs", "acs5"],
+            vintage: 2018,
+            values: [
+              "NAME",
+              "B05003E_009E",
+              "B05003E_011E",
+              "B05003E_020E",
+              "B05003E_022E",
+              "B05003E_008E",
+              "B05003E_019E"
+            ],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+
+          function(error, response) {
+            // loop through every county and calculate new total % for each
+            // and write new property percent_nhpi_citizen into the full array
+
+            for (i = 0; i < response.length; i++) {
+              const native_m_nhpi = response[i].B05003E_009E;
+              const naturalized_m_nhpi = response[i].B05003E_011E;
+              const native_f_nhpi = response[i].B05003E_020E;
+              const naturalized_f_nhpi = response[i].B05003E_022E;
+              const total_m_nhpi = response[i].B05003E_008E;
+              const total_f_nhpi = response[i].B05003E_019E;
+
+              const totalcitizen_nhpi =
+                native_m_nhpi +
+                naturalized_m_nhpi +
+                native_f_nhpi +
+                naturalized_f_nhpi;
+              const totalpop_nhpi = total_m_nhpi + total_f_nhpi;
+
+              let percent_nhpi_citizen =
+                (totalcitizen_nhpi / totalpop_nhpi) * 100;
+
+              if (Number.isNaN(percent_nhpi_citizen)) {
+                percent_nhpi_citizen = 0;
+              }
+              full_pi[i].percent_nhpi_citizen = percent_nhpi_citizen;
+            }
+          }
+        );
+
+        // NHPI Sub-Ethnic Groups //
+
+        /*
+            List of Variables:
+        B02019_001E	Estimate!!Total Groups Tallied	
+        B02019_002E	Estimate!!Total Groups Tallied!!Polynesian!!
+        B02019_003E	Estimate!!Total Groups Tallied!!Polynesian!!Samoan	
+        B02019_004E	Estimate!!Total Groups Tallied!!Polynesian!!Tongan	
+        B02019_005E	Estimate!!Total Groups Tallied!!Polynesian!!Other Polynesian	
+        B02019_006E	Estimate!!Total Groups Tallied!!Micronesian!!Guamanian or Chamorro	
+        B02019_007E	Estimate!!Total Groups Tallied!!Micronesian!!Marshallese	
+        B02019_008E	Estimate!!Total Groups Tallied!!Micronesian!!Other Micronesian	
+        B02019_009E	Estimate!!Total Groups Tallied!!Melanesian!!Fijian	
+        B02019_010E	Estimate!!Total Groups Tallied!!Melanesian!!Other Melanesian	
+        B02019_011E	Estimate!!Total Groups Tallied!!Other Pacific Islander, not specified	
+        */
+
+        census(
+          {
+            sourcePath: ["acs", "acs5"],
+            vintage: 2018,
+            values: [
+              "NAME",
+              "B02019_001E",
+              "B02019_002E",
+              "B02019_003E",
+              "B02019_004E",
+              "B02019_005E",
+              "B02019_006E",
+              "B02019_007E",
+              "B02019_008E",
+              "B02019_009E",
+              "B02019_010E",
+              "B02019_011E"
+            ],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+          function(error, response) {
+            for (i = 0; i < response.length; i++) {
+              //note: B02019_001E = Total NHPI //
+
+              let total_nhpi = response[i].B02019_001E;
+              const total_polynesian = response[i].B02019_002E;
+              const total_polynesian_samoan = response[i].B02019_003E;
+              const total_polynesian_tongan = response[i].B02019_004E;
+              const total_polynesian_other = response[i].B02019_005E;
+              const total_micronesian_guamanian_chamorro =
+                response[i].B02019_006E;
+              const total_micronesian_marshallese = response[i].B02019_007E;
+              const total_micronesian_other = response[i].B02019_008E;
+              const total_melanesian_fijian = response[i].B02019_009E;
+              const total_melanesian_other = response[i].B02019_010E;
+              const total_other = response[i].B02019_011E;
+
+              if (total_nhpi === 0) {
+                total_nhpi = 1;
+              } // to avoid NaN, no divide by 0
+
+              const percent_polynesian = (total_polynesian / total_nhpi) * 100;
+              const percent_polynesian_samoan =
+                (total_polynesian_samoan / total_nhpi) * 100;
+              const percent_polynesian_tongan =
+                (total_polynesian_tongan / total_nhpi) * 100;
+              const percent_polynesian_other =
+                (total_polynesian_other / total_nhpi) * 100;
+              const percent_micronesian_guamanian_chamorro =
+                (total_micronesian_guamanian_chamorro / total_nhpi) * 100;
+              const percent_micronesian_marshallese =
+                (total_micronesian_marshallese / total_nhpi) * 100;
+              const percent_micronesian_other =
+                (total_micronesian_other / total_nhpi) * 100;
+              const percent_melanesian_fijian =
+                (total_melanesian_fijian / total_nhpi) * 100;
+              const percent_melanesian_other =
+                (total_melanesian_other / total_nhpi) * 100;
+              const percent_other = (total_other / total_nhpi) * 100;
+
+              full_pi[i].polynesian = percent_polynesian;
+              full_pi[i].polynesian_samoan = percent_polynesian_samoan;
+              full_pi[i].polynesian_tongan = percent_polynesian_tongan;
+              full_pi[i].polynesian_other = percent_polynesian_other;
+              full_pi[
+                i
+              ].micronesian_guamanian_chamorro = percent_micronesian_guamanian_chamorro;
+              full_pi[
+                i
+              ].micronesian_marshallese = percent_micronesian_marshallese;
+              full_pi[i].micronesian_other = percent_micronesian_other;
+              full_pi[i].melanesian_fijian = percent_melanesian_fijian;
+              full_pi[i].melanesian_other = percent_melanesian_other;
+              full_pi[i].other = percent_other;
+            }
+
+            console.log("full pi array: ");
+            console.log(full_pi);
+          }
+        );
+      } // end synchronous function, call PI
+
+      /////////// end pop-up only data
+
+      map.on("load", function() {
+        // add source for all counties
+        map.addSource("census-counties", {
+          type: "vector",
+          tiles: [
+            "https://gis-server.data.census.gov/arcgis/rest/services/Hosted/VT_2017_050_00_PY_D1/VectorTileServer/tile/{z}/{y}/{x}.pbf"
+          ]
+        });
+
+        // add source for all states
+        map.addSource("census-states", {
+          type: "vector",
+          tiles: [
+            "https://gis-server.data.census.gov/arcgis/rest/services/Hosted/VT_2017_040_00_PY_D1/VectorTileServer/tile/{z}/{y}/{x}.pbf"
+          ]
+        });
+
+        // map layer: percent AAPI: calls + layer + pop-ups, STATES
+
+        census(
+          {
+            sourcePath: ["acs", "acs5", "profile"],
+            vintage: 2018,
+            values: ["NAME", "DP05_0067E", "DP05_0033E", "DP05_0068E"],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              state: "*"
+            }
+          },
+
+          function(error, response) {
+            // loop through every state and calculate new percent aapi for each
+            // and write new property percentaapi into the response array
+            for (i = 0; i < response.length; i++) {
+              const totalpop = response[i].DP05_0033E;
+              const total_asian = response[i].DP05_0067E;
+              const total_pacific = response[i].DP05_0068E;
+              const percent_aapi =
+                ((total_asian + total_pacific) / totalpop) * 100;
+              const countaapi = total_asian + total_pacific;
+              response[i].percentaapi = percent_aapi;
+              response[i].countaapi = countaapi;
+            }
+
+            var colorScale = chroma
+              .scale(["#fff387", "#d45304"]) // yellow to orange
+              .padding(0.01)
+              .domain([0, 18], "q", 5); // 5 quantiles
+
+            function getColor(val) {
+              return colorScale(val).hex();
+            }
+
+            //generate style expression
+            var colors = {};
+
+            response.forEach(function(state) {
+              var GEOID = state.state;
+              var value = state.percentaapi;
+              var color = getColor(value);
+              if (!colors[color]) {
+                colors[color] = [];
+              }
+              colors[color].push(GEOID);
+            });
+
+            var colorExpression = ["match", ["get", "GEOID"]];
+            var colorQuantiles = Object.entries(colors).forEach(function([
+              color,
+              GEOIDs
+            ]) {
+              colorExpression.push(GEOIDs, color);
+            });
+
+            colorExpression.push("rgba(0,0,0,0)");
+
+            map.addLayer(
+              {
+                id: "states_percent_aapi",
+                type: "fill",
+                source: "census-states",
+                "source-layer": "State",
+                maxzoom: zoomThreshold,
+                layout: {
+                  visibility: "visible"
+                },
+                paint: {
+                  "fill-opacity": 0.9,
+                  "fill-color": colorExpression
+                }
+              },
+              // add labels on top of map//
+              // "waterway-label"
+              "water"
+            );
+
+            $("#menu").fadeIn("fast");
+            $(".instructions").fadeIn("slow");
+            // ADD MENU only after this layer becomes visible
+
+            map.on("click", "states_percent_aapi", function(e) {
+              var coordinates = e.lngLat;
+              var GEOID = e.features[0].properties.GEOID;
+              var details = response.find(function(state) {
+                // look for state geoID in response array
+                var response_GEOID = state.state;
+                return GEOID === response_GEOID;
+              });
+
+              var showpercent = details.percentaapi.toFixed(1);
+              var showcount = details.countaapi.toLocaleString();
+
+              new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(
+                  "AAPI in " +
+                    details.NAME +
+                    ": <br><strong>" +
+                    showpercent +
+                    "%</strong> of total population<br>" +
+                    showcount +
+                    " people"
+                )
+                .addTo(map);
+            });
+
+            map.on("mousemove", "states_percent_aapi", e => {
+              map.getCanvas().style.cursor = "pointer";
+            });
+          } // end census response function
+        ); // end percent AAPI: calls + layer + pop-up
+
+        // new layer percent AA only: calls + layer + pop-ups, COUNTIES
+
+        census(
+          {
+            sourcePath: ["acs", "acs5", "profile"],
+            vintage: 2018,
+            values: ["NAME", "DP05_0067PE"],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+
+          function(error, response) {
+            for (i = 0; i < response.length; i++) {
+              full_aa[i].aa_county_percent = response[i].DP05_0067PE;
+            }
+
+            var colorScale = chroma
+              .scale(["#fff387", "#d45304"]) // yellow to orange
+              .padding(0.01)
+              .domain([0, 30], "q", 5); // 5 quantiles
+
+            function getColor(val) {
+              return colorScale(val).hex();
+            }
+
+            //generate style expression
+            var colors = {};
+
+            response.forEach(function(county) {
+              var GEOID = county.state + county.county;
+              var value = county.DP05_0067PE;
+              var color = getColor(value);
+              if (!colors[color]) {
+                colors[color] = [];
+              }
+              colors[color].push(GEOID);
+            });
+
+            var colorExpression = ["match", ["get", "GEOID"]];
+            var colorQuantiles = Object.entries(colors).forEach(function([
+              color,
+              GEOIDs
+            ]) {
+              colorExpression.push(GEOIDs, color);
+            });
+
+            colorExpression.push("rgba(0,0,0,0)");
+
+            map.addLayer(
+              {
+                id: "counties_aa_pop",
+                type: "fill",
+                source: "census-counties",
+                "source-layer": "County",
+                minzoom: zoomThreshold,
+                layout: {
+                  visibility: "visible"
+                },
+                paint: {
+                  "fill-opacity": 0.9,
+                  "fill-color": colorExpression
+                }
+              },
+              // add labels on top of map//
+              // "waterway-label"
+              "water"
+            );
+
+            map.on("click", "counties_aa_pop", function(e) {
+              $("div.subwindow").hide();
+              $("#subwindow-aa").show();
+
+              var coordinates = e.lngLat;
+
+              var currentz = map.getZoom();
+              if (currentz <= 6) {
+                currentz = currentz + 0.5;
+              }
+
+              map.flyTo({
+                center: coordinates,
+                zoom: currentz
+              });
+
+              var GEOID = e.features[0].properties.GEOID;
+
+              let countyIndex = full_aa.findIndex(findCounty);
+              // look for index of full_aa array, that matches the state+county GEOID of clicked county
+
+              function findCounty(county) {
+                var response_aa = county.state + county.county;
+                return GEOID === response_aa;
+              } // look for the county in full_aa that matches the state+county GEOID of clicked county
+
+              currentcounty =
+                full_aa[countyIndex].state + full_aa[countyIndex].county;
+              $("span.countyname").html(full_aa[countyIndex].NAME);
+              // for the info window
+
+              var showpercent = full_aa[countyIndex].aa_county_percent.toFixed(
+                1
+              );
+              var popcount_aa = full_aa[
+                countyIndex
+              ].DP05_0067E.toLocaleString();
+              var povpercent_aa = full_aa[countyIndex].percent_pov_aa.toFixed(
+                1
+              );
+              var engpercent_aa = full_aa[countyIndex].percent_lim_eng.toFixed(
+                1
+              );
+              var age_aa = full_aa[countyIndex].fixed_age;
+              var uninsured_aa = full_aa[
+                countyIndex
+              ].percent_aa_uninsured.toFixed(1);
+              var renters_aa = full_aa[countyIndex].percent_aa_renters.toFixed(
+                1
+              );
+              var votes_aa = full_aa[countyIndex].percent_aa_citizen.toFixed(1);
+
+              $("span.windowcount").html(popcount_aa);
+              $("#subwindow-aa ul#aa-subgroups li span").each(function() {
+                let groupid = $(this).attr("class");
+                $(this).html(full_aa[countyIndex][groupid].toFixed(1));
+              });
+              // for info window
+
+              var popup_aa = new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(
+                  "AA in " +
+                    full_aa[countyIndex].NAME +
+                    ": <br><strong>" +
+                    showpercent +
+                    "%</strong> of total population<br> " +
+                    popcount_aa +
+                    " Asian Americans<br><br><ul><li>Individuals in Poverty: <strong>" +
+                    povpercent_aa +
+                    "%</strong></li><li>Limited English Proficient: <strong>" +
+                    engpercent_aa +
+                    "%</strong></li><li>Median Age: <strong>" +
+                    age_aa +
+                    "</strong></li><li>No Health Insurance: <strong>" +
+                    uninsured_aa +
+                    "%</strong></li><li>Renters: <strong>" +
+                    renters_aa +
+                    "%</strong></li><li>Voting Age Citizens: <strong>" +
+                    votes_aa +
+                    "%</strong></li></ul>"
+                )
+                .addTo(map);
+            });
+
+            map.on("mousemove", "counties_aa_pop", e => {
+              map.getCanvas().style.cursor = "pointer";
+            });
+          } // end census response function
+        ); // end layer, percent AA only
+
+        // new layer percent PI only: calls + layer + pop-ups, COUNTIES
+
+        census(
+          {
+            sourcePath: ["acs", "acs5", "profile"],
+            vintage: 2018,
+            values: ["NAME", "DP05_0068PE"],
+            statskey: "278700434728d37ec967316f1508d7cb15973d58",
+            geoHierarchy: {
+              county: "*"
+            }
+          },
+
+          function(error, response) {
+            for (i = 0; i < response.length; i++) {
+              full_pi[i].pi_county_percent = response[i].DP05_0068PE;
+            }
+
+            var colorScale = chroma
+              .scale(["#e3e6da", "#3a4701"]) // green
+              .padding(0.01)
+              .domain([0, 3], "q", 5); // 5 quantiles
+
+            function getColor(val) {
+              return colorScale(val).hex();
+            }
+
+            //generate style expression
+            var colors = {};
+
+            response.forEach(function(county) {
+              var GEOID = county.state + county.county;
+              var value = county.DP05_0068PE;
+              var color = getColor(value);
+              if (!colors[color]) {
+                colors[color] = [];
+              }
+              colors[color].push(GEOID);
+            });
+
+            var colorExpression = ["match", ["get", "GEOID"]];
+            var colorQuantiles = Object.entries(colors).forEach(function([
+              color,
+              GEOIDs
+            ]) {
+              colorExpression.push(GEOIDs, color);
+            });
+
+            colorExpression.push("rgba(0,0,0,0)");
+
+            map.addLayer(
+              {
+                id: "counties_pi_pop",
+                type: "fill",
+                source: "census-counties",
+                "source-layer": "County",
+                minzoom: zoomThreshold,
+                layout: {
+                  // make layer invisible by default
+                  visibility: "none"
+                },
+                paint: {
+                  "fill-opacity": 0.9,
+                  "fill-color": colorExpression
+                }
+              },
+              //add labels on top of map//
+              // "waterway-label"
+              "water"
+            );
+
+            map.on("click", "counties_pi_pop", function(e) {
+              $("div.subwindow").hide();
+              $("#subwindow-pi").show();
+
+              var coordinates = e.lngLat;
+
+              var currentz = map.getZoom();
+              if (currentz <= 6) {
+                currentz = currentz + 0.5;
+              }
+
+              map.flyTo({
+                center: coordinates,
+                zoom: currentz
+              });
+
+              var GEOID = e.features[0].properties.GEOID;
+
+              let countyIndex = full_pi.findIndex(findCounty);
+              // look for index of full_pi array, that matches the state+county GEOID of clicked county
+
+              function findCounty(county) {
+                var response_pi = county.state + county.county;
+                return GEOID === response_pi;
+              } // look for the county in full_pi that matches the state+county GEOID of clicked county
+
+              currentcounty =
+                full_pi[countyIndex].state + full_pi[countyIndex].county;
+              $("span.countyname").html(full_pi[countyIndex].NAME);
+              // for the info window
+
+              var showpercent = full_pi[countyIndex].pi_county_percent.toFixed(
+                1
+              );
+              var popcount_pi = full_pi[
+                countyIndex
+              ].DP05_0068E.toLocaleString();
+              var povpercent_pi = full_pi[countyIndex].percent_pov_nhpi.toFixed(
+                1
+              );
+              var engpercent_pi = full_pi[
+                countyIndex
+              ].percent_lim_eng_nhpi.toFixed(1);
+              var age_pi = full_pi[countyIndex].fixed_age;
+              var uninsured_pi = full_pi[
+                countyIndex
+              ].percent_nhpi_uninsured.toFixed(1);
+              var renters_pi = full_pi[
+                countyIndex
+              ].percent_nhpi_renters.toFixed(1);
+              var votes_pi = full_pi[countyIndex].percent_nhpi_citizen.toFixed(
+                1
+              );
+
+              $("span.windowcount").html(popcount_pi);
+              $("#subwindow-pi ul#pi-subgroups li span").each(function() {
+                let groupid = $(this).attr("class");
+                $(this).html(full_pi[countyIndex][groupid].toFixed(1));
+              });
+              // for info window
+
+              new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(
+                  "PI in " +
+                    full_pi[countyIndex].NAME +
+                    ": <br><strong>" +
+                    showpercent +
+                    "%</strong> of total population<br>" +
+                    popcount_pi +
+                    " Pacific Islanders<br><br><ul><li>Individuals in Poverty: <strong>" +
+                    povpercent_pi +
+                    "%</strong></li><li>Limited English Proficient: <strong>" +
+                    engpercent_pi +
+                    "%</strong></li><li>Median Age: <strong>" +
+                    age_pi +
+                    "</strong></li><li>No Health Insurance: <strong>" +
+                    uninsured_pi +
+                    "%</strong></li><li>Renters: <strong>" +
+                    renters_pi +
+                    "%</strong></li><li>Voting Age Citizens: <strong>" +
+                    votes_pi +
+                    "%</strong></li></ul>"
+                )
+                .addTo(map);
+            });
+
+            map.on("mousemove", "counties_pi_pop", e => {
+              map.getCanvas().style.cursor = "pointer";
+            });
+          } // end census response function
+        ); // end layer, percent PI only
+
+        // if needed: another mapbox hosted counties vector tiles ...
+        /*map.addSource("counties-only", {
+          type: "vector",
+          url: "mapbox://mapbox.82pkq93d"
+        });*/
+
+        // add layer just for transparency, hover effect
+        map.addLayer({
+          id: "states",
+          type: "fill",
+          source: "census-states",
+          "source-layer": "State",
+          paint: {
+            "fill-outline-color": "transparent",
+            "fill-color": "transparent",
+            "fill-opacity": 0
+          }
+        });
+
+        // add layer just for hovers, states highlight
+        map.addLayer({
+          id: "states-highlighted",
+          maxzoom: zoomThreshold,
+          type: "line", // could also be fill
+          source: "census-states",
+          "source-layer": "State",
+          paint: {
+            /*"fill-outline-color": "Black",
+            "fill-color": "Black",
+            "fill-opacity": 0.1*/
+            "line-width": 1,
+            "line-color": "White"
+          },
+          filter: ["in", "GEOID", ""]
+        });
+
+        // add layer just for transparency, hover effect
+        map.addLayer({
+          id: "counties",
+          type: "fill",
+          source: "census-counties",
+          "source-layer": "County",
+          paint: {
+            "fill-outline-color": "transparent",
+            "fill-color": "transparent",
+            "fill-opacity": 0
+          }
+        });
+
+        // add layer just for hovers, counties highlight
+        map.addLayer({
+          id: "counties-highlighted",
+          minzoom: zoomThreshold,
+          type: "line", // could also be fill
+          source: "census-counties",
+          "source-layer": "County",
+          paint: {
+            /*"fill-outline-color": "Black",
+            "fill-color": "Black",
+            "fill-opacity": 0.1*/
+            "line-width": 1,
+            "line-color": "White"
+          },
+          filter: ["in", "GEOID", ""]
+        },
+        "settlement-subdivision-label"       
+        );
+
+        //////////////////////// end all layers
+
+        // hover effect
+
+        map.on("mousemove", "states", function(e) {
+          // Change the cursor style as a UI indicator.
+          map.getCanvas().style.cursor = "pointer";
+
+          // Single out the first found feature.
+          var feature = e.features[0];
+
+          // Query the counties layer visible in the map. Use the filter
+          // param to only collect results that share the same county name.
+          var relatedFeatures = map.querySourceFeatures("states", {
+            sourceLayer: "original",
+            filter: ["in", "GEOID", feature.properties.GEOID]
+          });
+
+          map.setFilter("states-highlighted", [
+            "in",
+            "GEOID",
+            feature.properties.GEOID
+          ]);
+        });
+
+        map.on("mousemove", "counties", function(e) {
+          // Change the cursor style as a UI indicator.
+          map.getCanvas().style.cursor = "pointer";
+
+          // Single out the first found feature.
+          var feature = e.features[0];
+
+          // Query the counties layer visible in the map. Use the filter
+          // param to only collect results that share the same county name.
+          var relatedFeatures = map.querySourceFeatures("counties", {
+            sourceLayer: "original",
+            filter: ["in", "GEOID", feature.properties.GEOID]
+          });
+
+          map.setFilter("counties-highlighted", [
+            "in",
+            "GEOID",
+            feature.properties.GEOID
+          ]);
+        });
+
+        $("div.menu-item:first-child").addClass("active");
+        $("#menu-zoomin div.menu-item:first-child ul li:first-child").addClass(
+          "active"
+        );
+
+        map.on("click", function(e) {
+          $("div.subwindow").hide();
+        });
+      }); // end map on load
+
+      map.on("zoom", function() {
+        if (map.getZoom() >= zoomThreshold) {
+          $("#menu").hide();
+          $(".instructions").hide();
+          $("#menu-zoomin").show();
+
+          var legendcheck = map.getLayoutProperty(
+            "counties_aa_pop",
+            "visibility"
+          );
+          if (legendcheck === "visible") {
+            setLegend("aa");
+          } else {
+            setLegend("pi");
+          }
+        } else {
+          // if zoomed out
+          $("#menu").show();
+          $("#menu-zoomin").hide();
+          setLegend("aapi");
+          var firstvis = map.getLayoutProperty(
+            "states_percent_aapi",
+            "visibility"
+          );
+          if (firstvis === "visible") {
+            $("#menu div.menu-item:first-child").addClass("active");
+          } else {
+            $("#menu div.menu-item:first-child").removeClass("active");
+          }
+        }
+      }); // end zoom function
+
+      // layer toggles
+
+      var statelayer = "states_percent_aapi";
+
+      $("#menu div.menu-item").click(function() {
+        $("div.mapboxgl-popup").hide();
+        if ($(this).hasClass("active")) {
+          map.setLayoutProperty(statelayer, "visibility", "none");
+          $(this).removeClass("active");
+        } else {
+          $(this).addClass("active");
+          map.setLayoutProperty(statelayer, "visibility", "visible");
+        }
+      });
+
+      var countylayers = ["counties_aa_pop", "counties_pi_pop"];
+
+      $("#menu-zoomin div.menu-item").click(function() {
+        $("div.subwindow").hide();
+        if ($(this).attr("layer-id") === "counties_pi_pop") {
+        } else if ($(this).attr("layer-id") === "counties_aa_pop") {
+        }
+        if ($(this).hasClass("active")) {
+          for (z = 0; z < countylayers.length; z++) {
+            map.setLayoutProperty(countylayers[z], "visibility", "none");
+          }
+          $(this).removeClass("active");
+          $("div.mapboxgl-popup-content").hide();
+          $("div.subwindow").hide();
+        } else {
+          $("div.menu-item")
+            .not($(this))
+            .removeClass("active");
+          $(this).addClass("active");
+          let clickedlayer = $(this).attr("layer-id");
+          for (z = 0; z < countylayers.length; z++) {
+            map.setLayoutProperty(countylayers[z], "visibility", "none");
+          }
+          map.setLayoutProperty(clickedlayer, "visibility", "visible");
+          if (clickedlayer === "counties_aa_pop") {
+            setLegend("aa");
+            if ($("div.mapboxgl-popup-content").is(":visible")) {
+              $("#subwindow-aa").show();
+              fillpopAA();
+            }
+          } else if (clickedlayer === "counties_pi_pop") {
+            setLegend("pi");
+            if ($("div.mapboxgl-popup-content").is(":visible")) {
+              $("#subwindow-pi").show();
+              fillpopPI();
+            }
+          }
+        }
+      });
+
+      function fillpopAA() {
+        var aa_switch = full_aa.find(function(county) {
+          var response_switch = county.state + county.county;
+          return currentcounty == response_switch;
+        });
+        var showpercent = aa_switch.aa_county_percent.toFixed(1);
+        var popcount_aa = aa_switch.DP05_0067E.toLocaleString();
+        var povpercent_aa = aa_switch.percent_pov_aa.toFixed(1);
+        var engpercent_aa = aa_switch.percent_lim_eng.toFixed(1);
+        var age_aa = aa_switch.fixed_age;
+        var uninsured_aa = aa_switch.percent_aa_uninsured.toFixed(1);
+        var renters_aa = aa_switch.percent_aa_renters.toFixed(1);
+        var votes_aa = aa_switch.percent_aa_citizen.toFixed(1);
+
+        $("span.windowcount").html(popcount_aa);
+        $("#subwindow-aa ul#aa-subgroups li span").each(function() {
+          let groupid = $(this).attr("class");
+          $(this).html(aa_switch[groupid].toFixed(1));
+        });
+        // for info window
+
+        $("div.mapboxgl-popup-content").html(
+          "<button class='mapboxgl-popup-close-button newpop' type='button' aria-label='Close popup'>×</button>AA in " +
+            aa_switch.NAME +
+            ": <br><strong>" +
+            showpercent +
+            "%</strong> of total population<br> " +
+            popcount_aa +
+            " Asian Americans<br><br><ul><li>Individuals in Poverty: <strong>" +
+            povpercent_aa +
+            "%</strong></li><li>Limited English Proficient: <strong>" +
+            engpercent_aa +
+            "%</strong></li><li>Median Age: <strong>" +
+            age_aa +
+            "</strong></li><li>No Health Insurance: <strong>" +
+            uninsured_aa +
+            "%</strong></li><li>Renters: <strong>" +
+            renters_aa +
+            "%</strong></li><li>Voting Age Citizens: <strong>" +
+            votes_aa +
+            "%</strong></li></ul>"
+        );
+      }
+
+      function fillpopPI() {
+        var pi_switch = full_pi.find(function(county) {
+          var response_switch = county.state + county.county;
+          return currentcounty == response_switch;
+        });
+
+        var showpercent = pi_switch.pi_county_percent.toFixed(1);
+        var popcount_pi = pi_switch.DP05_0068E.toLocaleString();
+        var povpercent_pi = pi_switch.percent_pov_nhpi.toFixed(1);
+        var engpercent_pi = pi_switch.percent_lim_eng_nhpi.toFixed(1);
+        var age_pi = pi_switch.fixed_age;
+        var uninsured_pi = pi_switch.percent_nhpi_uninsured.toFixed(1);
+        var renters_pi = pi_switch.percent_nhpi_renters.toFixed(1);
+        var votes_pi = pi_switch.percent_nhpi_citizen.toFixed(1);
+
+        $("span.windowcount").html(popcount_pi);
+        $("#subwindow-pi ul#pi-subgroups li span").each(function() {
+          let groupid = $(this).attr("class");
+          $(this).html(pi_switch[groupid].toFixed(1));
+        });
+        // for info window
+
+        $("div.mapboxgl-popup-content").html(
+          "<button class='mapboxgl-popup-close-button newpop' type='button' aria-label='Close popup'>×</button>PI in " +
+            pi_switch.NAME +
+            ": <br><strong>" +
+            showpercent +
+            "%</strong> of total population<br> " +
+            popcount_pi +
+            " Pacific Islanders<br><br><ul><li>Individuals in Poverty: <strong>" +
+            povpercent_pi +
+            "%</strong></li><li>Limited English Proficient: <strong>" +
+            engpercent_pi +
+            "%</strong></li><li>Median Age: <strong>" +
+            age_pi +
+            "</strong></li><li>No Health Insurance: <strong>" +
+            uninsured_pi +
+            "%</strong></li><li>Renters: <strong>" +
+            renters_pi +
+            "%</strong></li><li>Voting Age Citizens: <strong>" +
+            votes_pi +
+            "%</strong></li></ul>"
+        );
+      }
+      function setLegend(scheme) {
+        if (scheme === "aa") {
+          // for all aa legend colors
+          $("div#legend div.color")
+            .eq(0)
+            .css("background-color", "#fff387");
+          $("div#legend div.label")
+            .eq(0)
+            .html("0 - 7.5%");
+          $("div#legend div.color")
+            .eq(1)
+            .css("background-color", "#f29d3b");
+          $("div#legend div.label")
+            .eq(1)
+            .html("7.5 - 15%");
+          $("div#legend div.color")
+            .eq(2)
+            .css("background-color", "#e47923");
+          $("div#legend div.label")
+            .eq(2)
+            .html("15 - 22.5%");
+          $("div#legend div.color")
+            .eq(3)
+            .css("background-color", "#d45304");
+          $("div#legend div.label")
+            .eq(3)
+            .html("> 22.5%");
+        }
+        if (scheme === "pi") {
+          //for all pi legend colors
+          $("div#legend div.color")
+            .eq(0)
+            .css("background-color", "#e3e6da");
+          $("div#legend div.label")
+            .eq(0)
+            .html("0 - 0.75%");
+          $("div#legend div.color")
+            .eq(1)
+            .css("background-color", "#a9ae8e");
+          $("div#legend div.label")
+            .eq(1)
+            .html("0.75 - 1.5%");
+          $("div#legend div.color")
+            .eq(2)
+            .css("background-color", "#717948");
+          $("div#legend div.label")
+            .eq(2)
+            .html("1.5 - 2.25%");
+          $("div#legend div.color")
+            .eq(3)
+            .css("background-color", "#3a4701");
+          $("div#legend div.label")
+            .eq(3)
+            .html("> 2.25% ");
+        }
+        if (scheme == "aapi") {
+          // for all aapi legend colors
+          $("div#legend div.color")
+            .eq(0)
+            .css("background-color", "#fff387");
+          $("div#legend div.label")
+            .eq(0)
+            .html("0 - 4.5%");
+          $("div#legend div.color")
+            .eq(1)
+            .css("background-color", "#f29d3b");
+          $("div#legend div.label")
+            .eq(1)
+            .html("4.5 - 9%");
+          $("div#legend div.color")
+            .eq(2)
+            .css("background-color", "#e47923");
+          $("div#legend div.label")
+            .eq(2)
+            .html("9 - 13.5%");
+          $("div#legend div.color")
+            .eq(3)
+            .css("background-color", "#d45304");
+          $("div#legend div.label")
+            .eq(3)
+            .html("> 13.5%");
+        }
+      }
+    </script>
+  </body>
+</html>
