@@ -22,6 +22,8 @@
       body {
         margin: 0;
         padding: 0;
+        font: 400 13px/14px "Helvetica Neue", Arial, Helvetica, sans-serif;
+        overflow: hidden;
       }
 
       #map {
@@ -132,6 +134,7 @@
         color: White;
         font-size: 14px;
         font-family: "Open Sans", sans-serif;
+        display: none;
       }
 
       div#legendTitle {
@@ -154,6 +157,36 @@
 
       div#legend #legendWrapper div.label {
         display: inline-block;
+      }
+
+      .howpop-wrapper {
+        position: relative;
+      }
+
+      div#howpop {
+        background-color: rgba(0, 0, 0, 0.85);
+        position: fixed;
+        width: 75%;
+        height: auto;
+        left: 12.5%;
+        top: 80px;
+        z-index: 2;
+        padding: 40px;
+        box-sizing: border-box;
+        font-size: 18px;
+        overflow: auto;
+      }
+
+      div#howpop a {
+        color: rgb(231, 160, 80);
+      }
+
+      div#popclose {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        cursor: pointer;
+        color: white;
       }
 
       div.instructions {
@@ -322,6 +355,45 @@
       <img
         src="https://cdn.glitch.com/33c850c4-7fd8-419f-b5aa-e1f6a65a95aa%2Farrow-circle-right-black.svg?v=1600273982693"
       />
+    </div>
+
+    <div class="howpop-wrapper">
+      <div id="howpop">
+        <p style="line-height: 20px; color: white">
+          <strong>
+            About
+            <a href="https://movementhub.org/">Movement Hub's </a> StoryMap
+          </strong>
+        </p>
+
+        <p style="line-height: 18px; font-size:14px; color: white ">
+          This map incorporates data from more than 50 summary tables from the
+          Census’ 2015-2019 5-year American Community Survey API to produce
+          demographic profiles on the fly at the state and county level. These
+          profiles include indicators selected based on feedback from the
+          <a href="https://movementhub.org/">Shared Liberation Network</a> and
+          include information on socio-demographic (poverty, English proficiency
+          rates, age, health insurance coverage, tenure, and voting age
+          citizens) and population breakdowns for Asian American and Native
+          Hawaiian/Pacific Islander populations separately.
+        </p>
+        <p>
+          <img
+            src="https://cdn.glitch.com/4bff07fc-afef-485d-b67d-a7c50acba084%2FMovementHubCensusMap.png?v=1613151070759"
+            alt="Instructions for using the map"
+            width="100%"
+            height="100%"
+          />
+        </p>
+
+        <p style="line-height: 18px; font-size:14px; color: white ">
+          Questions or to submit stories, contact
+          <a href="mailto:admin@movementhub.org ">admin@movementhub.org </a>
+        </p>
+        <div id="popclose">
+          x
+        </div>
+      </div>
     </div>
 
     <div id="map"></div>
@@ -1199,7 +1271,7 @@
         map.addSource("census-counties", {
           type: "vector",
           tiles: [
-           // old link: "https://gis-server.data.census.gov/arcgis/rest/services/Hosted/VT_2017_050_00_PY_D1/VectorTileServer/tile/{z}/{y}/{x}.pbf"
+            // old link: "https://gis-server.data.census.gov/arcgis/rest/services/Hosted/VT_2017_050_00_PY_D1/VectorTileServer/tile/{z}/{y}/{x}.pbf"
             "https://gis.data.census.gov/arcgis/rest/services/Hosted/VT_2017_050_00_PY_D1/VectorTileServer/tile/{z}/{y}/{x}.pbf"
           ]
         });
@@ -1208,8 +1280,8 @@
         map.addSource("census-states", {
           type: "vector",
           tiles: [
-          //old link:  "https://gis-server.data.census.gov/arcgis/rest/services/Hosted/VT_2017_040_00_PY_D1/VectorTileServer/tile/{z}/{y}/{x}.pbf"
-           "https://gis.data.census.gov/arcgis/rest/services/Hosted/VT_2017_040_00_PY_D1/VectorTileServer/tile/{z}/{y}/{x}.pbf"
+            //old link:  "https://gis-server.data.census.gov/arcgis/rest/services/Hosted/VT_2017_040_00_PY_D1/VectorTileServer/tile/{z}/{y}/{x}.pbf"
+            "https://gis.data.census.gov/arcgis/rest/services/Hosted/VT_2017_040_00_PY_D1/VectorTileServer/tile/{z}/{y}/{x}.pbf"
           ]
         });
 
@@ -1293,7 +1365,7 @@
             );
 
             $("#menu").fadeIn("fast");
-            $(".instructions").fadeIn("slow");
+            // $(".instructions").fadeIn("slow");
             // ADD MENU only after this layer becomes visible
 
             map.on("click", "states_percent_aapi", function(e) {
@@ -1703,22 +1775,23 @@
         });
 
         // add layer just for hovers, counties highlight
-        map.addLayer({
-          id: "counties-highlighted",
-          minzoom: zoomThreshold,
-          type: "line", // could also be fill
-          source: "census-counties",
-          "source-layer": "County",
-          paint: {
-            /*"fill-outline-color": "Black",
+        map.addLayer(
+          {
+            id: "counties-highlighted",
+            minzoom: zoomThreshold,
+            type: "line", // could also be fill
+            source: "census-counties",
+            "source-layer": "County",
+            paint: {
+              /*"fill-outline-color": "Black",
             "fill-color": "Black",
             "fill-opacity": 0.1*/
-            "line-width": 1,
-            "line-color": "White"
+              "line-width": 1,
+              "line-color": "White"
+            },
+            filter: ["in", "GEOID", ""]
           },
-          filter: ["in", "GEOID", ""]
-        },
-        "settlement-subdivision-label"       
+          "settlement-subdivision-label"
         );
 
         //////////////////////// end all layers
@@ -1776,6 +1849,16 @@
           $("div.subwindow").hide();
         });
       }); // end map on load
+
+      $(document).ready(function() {
+        $("div#popclose").click(function() {
+          $("#howpop").fadeOut("slow");
+          $(".instructions").fadeIn("slow");
+          $("#howsearch").fadeIn("fast");
+          $("#infowindow").fadeIn("slow");
+          $("#legend").fadeIn("slow");
+        });
+      });
 
       map.on("zoom", function() {
         if (map.getZoom() >= zoomThreshold) {
