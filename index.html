@@ -169,9 +169,9 @@
         width: 75%;
         height: auto;
         left: 12.5%;
-        top: 80px;
+        top: 8%;
         z-index: 2;
-        padding: 40px;
+        padding: 20px 40px;
         box-sizing: border-box;
         font-size: 18px;
         overflow: auto;
@@ -218,6 +218,71 @@
         /*transform: rotate(-5deg);*/
         margin-left: 10px;
         vertical-align: middle;
+      }
+
+      div#restart {
+        position: absolute;
+        right: 10px;
+        top: 150px;
+        width: 30px;
+        background-color: White;
+        border: 2px solid LightGray;
+        padding: 3px;
+        box-sizing: border-box;
+        cursor: pointer;
+        text-align: center;
+        z-index: 1;
+      }
+
+      div#restart-title {
+        display: none;
+        font-size: 13px;
+        position: absolute;
+        top: 185px;
+        background-color: White;
+        right: 10px;
+        z-index: 1;
+      }
+
+      div#restart:hover {
+        border: 2px solid Black;
+      }
+
+      div#question img {
+        max-width: 100%;
+      }
+
+      div#question {
+        position: absolute;
+        right: 10px;
+        top: 200px;
+        width: 30px;
+        background-color: orange;
+        border: 2px solid LightGray;
+        padding: 3px;
+        box-sizing: border-box;
+        cursor: pointer;
+        text-align: center;
+        border-radius: 25px;
+        z-index: 1;
+      }
+
+      div#question-title {
+        display: none;
+        font-size: 13px;
+        position: absolute;
+        top: 185px;
+        background-color: White;
+        right: 10px;
+        z-index: 1;
+      }
+
+      div#question:hover {
+        border: 2px solid Black;
+      }
+
+      div#question img {
+        max-width: 80%;
       }
 
       div.mapboxgl-popup-content ul {
@@ -362,7 +427,7 @@
         <p style="line-height: 20px; color: white">
           <strong>
             About
-            <a href="https://movementhub.org/">Movement Hub's </a> StoryMap
+            <a href="https://movementhub.org/">Movement Hub's </a> Census Map
           </strong>
         </p>
 
@@ -395,6 +460,25 @@
           x
         </div>
       </div>
+    </div>
+
+    <div id="restart">
+      <img
+        src="https://cdn.glitch.com/553bd511-6329-4b89-94d0-bc7dcd0e067a%2Fmap-marked-alt-light.svg?v=1603319015742"
+      />
+    </div>
+    <div id="restart-title">
+      reset map
+    </div>
+
+    <div id="question">
+      <img
+        src="https://cdn.glitch.com/2b826943-3c83-4a09-85c4-cd2d12a6f759%2Fquestionmark.png?v=1603743751301"
+      />
+    </div>
+
+    <div id="question-title">
+      show instructions
     </div>
 
     <div id="map"></div>
@@ -1858,6 +1942,27 @@
           $("#howsearch").fadeIn("fast");
           $("#infowindow").fadeIn("slow");
           $("#legend").fadeIn("slow");
+        });
+        
+        $("#question").hover(function() {
+          $("#question-title").toggle();
+            });
+        
+        $("#question").click(function() {
+          $("#howpop").fadeIn("fast");
+          $("#infowindow").fadeOut("fast");
+          $("#legend").fadeOut("fast");
+            });
+
+        $("#restart").hover(function() {
+          $("#restart-title").toggle();
+        });
+        
+        $("#restart").click(function() {
+          map.flyTo({
+            center: { lat: 37.0902, lng: -110.7129 },
+            zoom: 3
+          });
         });
       });
 
